@@ -1,4 +1,6 @@
 from sense_hat import SenseHat
+import adafruit_pcf8591.pcf8591 as pcf
+from adafruit_pcf8591.analog_in import AnalogIn
 import subprocess
 from datetime import datetime
 from os import path
