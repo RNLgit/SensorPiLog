@@ -31,7 +31,7 @@ class NMosPWM(Controller):
         self.__frequency = frequency
         self.__duty_cycle = None
         self.is_stopped = True
-        self.pwm = HardwarePWM(pwm_channel=HW_PWM_MAP[pinout_type][pin_no], hz=self.freq)
+        self.pwm = HardwarePWM(pwm_channel=HW_PWM_MAP[pinout_type][pin_no], hz=self.__frequency)
 
     @property
     def frequency(self):
@@ -48,10 +48,6 @@ class NMosPWM(Controller):
     @duty_cycle.setter
     def duty_cycle(self, value):
         self.set_duty_cycle(value)
-
-    @duty_cycle.setter
-    def duty_cycle(self, value):
-        self.__duty_cycle = value
 
     def set_frequency(self, frequency: int):
         if frequency <= 0:
