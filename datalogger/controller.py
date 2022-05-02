@@ -1,5 +1,6 @@
 from RPi.GPIO import BOARD, BCM
 from rpi_hardware_pwm import HardwarePWM
+import atexit
 
 
 HW_PWM_MAP = {BOARD: {12: 0, 35: 1},
@@ -20,8 +21,15 @@ class Controller(object):
     def stop_pwm(self):
         raise NotImplementedError
 
-    def __del__(self):
+    def exit_handler(self):
         self.stop_pwm()
+        print('Fan control stopped')
+
+    def __del__(self):
+        try:
+            self.stop_pwm()
+        except:
+            pass
 
 
 class NMosPWM(Controller):
@@ -91,11 +99,12 @@ if __name__ == '__main__':
                         help='PWM frequency. Ideally set frequency outside audible range')
     parser.add_argument('-m', '--temperature_max', dest='temperature_max', default=80, type=int,
                         help='Temperature point that turn fan to full speed')
-    parser.add_argument('-t', '--time', dest='time', default=10, type=int,
+    parser.add_argument('-s', '--settle_time', dest='settle_time', default=10, type=int,
                         help='After temperature reached min set point, delay time (s) before fan can turn back on')
 
     ops = parser.parse_args()
 
     fan_h = NMosPWM(ops.pin, ops.frequency, type_map[ops.board_type])
+    atexit.register(fan_h.exit_handler)
     fan_h.start_pwm(ops.duty_cycle)
     time.sleep(3)
