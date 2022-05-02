@@ -6,7 +6,7 @@ setup(
     description='RPI sense hat logger and pwm fan controller',
     long_description=open('README.md').read(),
     classifiers=[],
-    install_requires=['rpi-hardware-pwm', 'adafruit-circuitpython-pcf8591'],
+    install_requires=['adafruit-circuitpython-pcf8591'],
     setup_requires=['setuptools_scm', 'tox'],
     scripts=[],
     entry_points={},
