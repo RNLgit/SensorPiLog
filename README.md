@@ -1,2 +1,2 @@
-# rpi-sense-datalogger
-Data logger service for RPI sense hat
+# SensorPiLog
+A data logging service designed for the Raspberry Pi, supporting various sensor peripherals like generic sense hat, etc.
