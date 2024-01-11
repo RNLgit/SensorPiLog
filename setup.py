@@ -3,10 +3,10 @@ from setuptools import setup
 setup(
     name="datalogger",
     version="0.0.1",
-    description='RPI sense hat logger and pwm fan controller',
+    description='Data logging service designed for the Raspberry Pi sense hat and various other sensor peripherals',
     long_description=open('README.md').read(),
     classifiers=[],
-    install_requires=['adafruit-circuitpython-pcf8591'],
+    install_requires=[],
     setup_requires=['setuptools_scm', 'tox'],
     scripts=[],
     entry_points={},
