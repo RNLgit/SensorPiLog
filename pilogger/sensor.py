@@ -61,7 +61,7 @@ class PiSensor(object):
         """
         get current data time timestamp. e.g. 20:13:52, 04 Sep 2019 will be: 2019-09-04-20-13-52
         """
-        return datetime.today().strftime("%Y-%m-%d-%H-%M-%S")
+        return datetime.today().strftime("%Y-%m-%d %H:%M:%S")
 
     @property
     def read_all(self) -> PiDataFormat:
