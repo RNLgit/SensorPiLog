@@ -1,28 +1,35 @@
 from sense_hat import SenseHat
 import subprocess
 from datetime import datetime
-from os import path
+from collections import namedtuple
+from typing import Union
 
 STD_P_KPA = 101.325
 HUMIDITY_COMFORT = [30, 50]
 STD_PRESSURE_KPA = 101.325
 
+PiDataFormat = namedtuple(
+    "PiDataFormat", ["time", "temperature", "humidity", "pressure", "accelerometer", "gyroscope", "compass", "cpu_temp"]
+)
 
-class RpiSensor(object):
-    DATA_SEPARATOR = ','
 
+class PiSensor(object):
     def __init__(self):
         self.sense = SenseHat()
 
     @staticmethod
-    def get_cpu_temp() -> float:
+    def get_cpu_temp() -> Union[float, None]:
         """
         get current RPI cpu temperature
         Unit in deg C
         :param round_to: round result to decimal points
         """
-        result = subprocess.Popen(['vcgencmd', 'measure_temp'], stdout=subprocess.PIPE)
-        return float(result.stdout.read().decode('ascii')[5:-3])  # e.g. reading: temp=42.3'C
+        process = subprocess.Popen(["vcgencmd", "measure_temp"], stdout=subprocess.PIPE)
+        output, error = process.communicate()
+        if not error:
+            return float(output.decode("ascii")[5:-3])  # e.g. reading: temp=42.3'C
+        else:
+            return None
 
     def get_temperature(self, round_to=2) -> float:
         """
@@ -47,28 +54,27 @@ class RpiSensor(object):
         """
         get current timer reading month stamp. e.g. Dec 2020: 2020-12-11
         """
-        return datetime.today().strftime('%Y-%m-%d')
+        return datetime.today().strftime("%Y-%m-%d")
 
     @staticmethod
     def get_time() -> str:
         """
         get current data time timestamp. e.g. 20:13:52, 04 Sep 2019 will be: 2019-09-04-20-13-52
         """
-        return datetime.today().strftime('%Y-%m-%d-%H-%M-%S')
+        return datetime.today().strftime("%Y-%m-%d-%H-%M-%S")
 
-    def read_all(self) -> tuple:
+    @property
+    def read_all(self) -> PiDataFormat:
         """
-        get a tuple of sense hat supported data (and CPU reading) readings
-        :return: exact date time seconds, cpu temperature, sense hat board temperature,
-            relative humidity, atmospheric pressure
+        get a namedtuple of sense hat supported data (and CPU reading) readings including local time and rpi cpu temp
         """
-        return self.get_time(), self.get_cpu_temp(), self.get_temperature(), self.get_humidity(), self.get_pressure_kpa()
-
-    def log_one_data(self, log_dir='/var/log', log_filename='sense.log'):
-        """
-        Sample a group of environmental reading and log it into system log.
-        :param log_dir: directory of log going to save. Default /vat/log
-        :param log_filename: log filename to log data. Default sense.log
-        """
-        with open(path.join(log_dir, log_filename), 'a') as f:
-            f.write(self.DATA_SEPARATOR.join(map(str, self.sample_one_data())))
+        return PiDataFormat(
+            time=self.get_time(),
+            temperature=self.get_temperature(),
+            humidity=self.get_humidity(),
+            pressure=self.get_pressure_kpa(),
+            accelerometer=self.sense.get_accelerometer(),
+            gyroscope=self.sense.get_gyroscope(),
+            compass=self.sense.get_compass(),
+            cpu_temp=self.get_cpu_temp(),
+        )
