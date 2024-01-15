@@ -5,7 +5,7 @@ import os
 class SQLLogger(object):
     READ_QUERY = "SELECT * FROM {table_name} {where_clause}"
 
-    def __init__(self, host, port: 3306, user: str = None, password: str = None):
+    def __init__(self, host, port: int = 3306, user: str = None, password: str = None):
         self.host = host
         self.port = port
         self.user = user if user else os.environ.get("PI_SERVER_DB_USER")
@@ -14,7 +14,7 @@ class SQLLogger(object):
         self.cursor = None
 
     def connect_database(self, database: str) -> None:
-        if not self.connection.is_connected():
+        if not self.connection or self.connection.is_connected():
             self.connection = sql.connect(
                 host=self.host, port=self.port, user=self.user, password=self.__password, database=database
             )
