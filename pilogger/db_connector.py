@@ -5,13 +5,16 @@ import os
 class SQLLogger(object):
     READ_QUERY = "SELECT * FROM {table_name} {where_clause}"
 
-    def __init__(self, host, port: int = 3306, user: str = None, password: str = None):
+    def __init__(self, host, database: str = None, port: int = 3306, user: str = None, password: str = None):
         self.host = host
         self.port = port
         self.user = user if user else os.environ.get("PI_SERVER_DB_USER")
         self.__password = password if password else os.environ.get("PI_SERVER_DB_PASSWORD")
         self.connection = None
         self.cursor = None
+        self.database = database if database else os.environ.get("PI_SERVER_DATABASE", None)
+        if database:  # if database is provided, connect to it
+            self.connect_database(self.database)
 
     def connect_database(self, database: str) -> None:
         if not self.connection or self.connection.is_connected():
@@ -28,6 +31,12 @@ class SQLLogger(object):
         if self.connection.is_connected():
             self.close()
             self.connect_database(database)
+
+    @property
+    def list_tables(self) -> list:
+        self.cursor.execute("SHOW TABLES")
+        tables = self.cursor.fetchall()
+        return [table[0] for table in tables]
 
     def read_db_by_date(self, table_name: str, date: str) -> list:
         self.cursor.execute(self.READ_QUERY.format(table_name=table_name, where_clause=f"WHERE date = '{date}'"))
