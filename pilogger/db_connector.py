@@ -20,7 +20,8 @@ class SQLLogger(object):
         self.connection = None
         self.cursor = None
         self.database = database if database else os.environ.get("PI_SERVER_DATABASE", None)
-        if database:  # if database is provided, connect to it
+        self.table_name = os.environ.get("PI_SERVER_TABLE_NAME", None)
+        if self.database:  # if database is provided, connect to it
             self.connect_database(self.database)
 
     def __enter__(self):
@@ -51,8 +52,19 @@ class SQLLogger(object):
         tables = self.cursor.fetchall()
         return [table[0] for table in tables]
 
-    def list_columns(self, table_name: str) -> list:
-        self.cursor.execute(f"SHOW COLUMNS FROM {table_name}")
+    def _get_table_name_auto(self, table_name: str) -> str:
+        """
+        if table_name is not provided, use the default environmental variables
+        """
+        if not table_name and not self.table_name:
+            raise ValueError("table_name must be provided")
+        return table_name if table_name else self.table_name
+
+    def list_columns(self, table_name: str = None) -> list:
+        """
+        list all columns in a table
+        """
+        self.cursor.execute(f"SHOW COLUMNS FROM {self._get_table_name_auto(table_name)}")
         return [
             COLUMN(
                 col_name,
@@ -65,14 +77,31 @@ class SQLLogger(object):
             for col_name, col_type, is_null, col_key, col_default, col_extra in self.cursor.fetchall()
         ]
 
-    def read_by_date(self, table_name: str, date: Union[str]) -> list:
+    def read_data(
+        self,
+        date: Union[str, datetime.date] = None,
+        table_name: str = None,
+        column_name: str = "sample_time",
+        order_by_col="sample_time",
+        limit: int = None,
+    ) -> list:
         """
         Read all records from a table by date. Date must be in the format of datatime.date or YYYY-MM-DD
         :param table_name: name of the table in database to read from
         :param date: date to read from format as datetime.date or YYYY-MM-DD
+        :param column_name: name of the column to read from
+        :param order_by_col: column to order by
+        :param limit: limit number of records to read
         """
-        if isinstance(date, datetime.date):
+        if date and isinstance(date, datetime.date):
             date = date.strftime("%Y-%m-%d")
-        where_date_clause = "WHERE DATE(sample_date) = {date}".format(date=date)
-        self.cursor.execute(self.READ_QUERY.format(table_name=table_name, where_clause=where_date_clause))
+            where_date_clause = f"WHERE DATE({column_name}) = '{date}'"
+        base_query = self.TABLE_QUERY.format(
+            table_name=self._get_table_name_auto(table_name), where_clause=where_date_clause if date else ""
+        ).strip()
+        if order_by_col:
+            base_query += " " + self.ORDER_BY.format(column_name=order_by_col)
+        if limit:
+            base_query += " " + self.LIMIT.format(limit=limit)
+        self.cursor.execute(base_query)
         return self.cursor.fetchall()
