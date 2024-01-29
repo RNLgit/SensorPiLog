@@ -1,4 +1,3 @@
-from sense_hat import SenseHat
 import subprocess
 from datetime import datetime
 from collections import namedtuple
@@ -11,6 +10,20 @@ STD_PRESSURE_KPA = 101.325
 PiDataFormat = namedtuple(
     "PiDataFormat", ["time", "temperature", "humidity", "pressure", "accelerometer", "gyroscope", "compass", "cpu_temp"]
 )
+
+
+def is_raspberry_pi():
+    try:
+        with open("/proc/device-tree/model") as f:
+            return "Raspberry Pi" in f.read()
+    except Exception:
+        return False
+
+
+if is_raspberry_pi():
+    from sense_hat import SenseHat
+else:
+    print("Not running on Raspberry Pi, PiSensor for sense hat will not work.")
 
 
 class PiSensor(object):
