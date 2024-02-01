@@ -1,6 +1,7 @@
 import mysql.connector as sql
 from collections import namedtuple
 from typing import Union
+from .sensor import PiDataFormat
 import datetime
 import os
 
@@ -11,6 +12,25 @@ class SQLLogger(object):
     TABLE_QUERY = "SELECT * FROM {table_name} {where_clause}"
     ORDER_BY = "ORDER BY {column_name} DESC"
     LIMIT = "LIMIT {limit}"
+    INSERT = "INSERT INTO {table_name} ({columns}) VALUES ({values})"
+    PIDATA_LOG_FIELDS = [
+        "time",
+        "temperature",
+        "humidity",
+        "pressure",
+        "accelerometer_roll",
+        "accelerometer_pitch",
+        "accelerometer_yaw",
+        "gyroscope_roll",
+        "gyroscope_pitch",
+        "gyroscope_yaw",
+        "compass",
+        "cpu_temp",
+    ]
+    PIDATA_FIELDS_2_COL = {
+        "gyroscope": ["gyroscope_roll", "gyroscope_pitch", "gyroscope_yaw"],
+        "accelerometer": ["accelerometer_roll", "accelerometer_pitch", "accelerometer_yaw"],
+    }
 
     def __init__(self, host, database: str = None, port: int = 3306, user: str = None, password: str = None):
         self.host = host
@@ -105,3 +125,33 @@ class SQLLogger(object):
             base_query += " " + self.LIMIT.format(limit=limit)
         self.cursor.execute(base_query)
         return self.cursor.fetchall()
+
+    def write_data(self, data: dict) -> None:
+        """
+        Write data to database
+        :param data: dict object with keys as database column names and values as data
+        """
+        columns = ", ".join(data.keys())
+        values = ", ".join(str(v) for v in data.values())
+        query = self.INSERT.format(table_name=self.table_name, columns=columns, values=values)
+        self.cursor.execute(query)
+        self.connection.commit()
+
+    @staticmethod
+    def _flatten_pidata(pi_data: PiDataFormat) -> dict:
+        """
+        Write Pi Sense Hat data to database
+        :param pi_data: PiDataFormat object
+        """
+        flat_dict = {}
+        for k, v in pi_data._fields:
+            if isinstance(v, dict):
+                for d_k, d_v in v.items():
+                    flat_dict[f"{k}_{d_k}"] = d_v
+        return flat_dict
+
+    def write_pi_data(self, sensor_data: PiDataFormat) -> None:
+        """
+        Write Pi Sense Hat data to database
+        """
+        self.write_data(self._flatten_pidata(sensor_data))
