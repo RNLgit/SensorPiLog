@@ -32,7 +32,15 @@ class SQLLogger(object):
         "accelerometer": ["accelerometer_roll", "accelerometer_pitch", "accelerometer_yaw"],
     }
 
-    def __init__(self, host, database: str = None, port: int = 3306, user: str = None, password: str = None):
+    def __init__(
+        self,
+        host,
+        database: str = None,
+        port: int = 3306,
+        user: str = None,
+        password: str = None,
+        table_name: str = None,
+    ):
         self.host = host
         self.port = port
         self.user = user if user else os.environ.get("PI_SERVER_DB_USER")
@@ -40,7 +48,7 @@ class SQLLogger(object):
         self.connection = None
         self.cursor = None
         self.database = database if database else os.environ.get("PI_SERVER_DATABASE", None)
-        self.table_name = os.environ.get("PI_SERVER_TABLE_NAME", None)
+        self.table_name = table_name if table_name else os.environ.get("PI_SERVER_TABLE_NAME", None)
         if self.database:  # if database is provided, connect to it
             self.connect_database(self.database)
 
@@ -144,10 +152,12 @@ class SQLLogger(object):
         :param pi_data: PiDataFormat object
         """
         flat_dict = {}
-        for k, v in pi_data._fields:
-            if isinstance(v, dict):
-                for d_k, d_v in v.items():
+        for k in pi_data._fields:
+            if isinstance(getattr(pi_data, k), dict):
+                for d_k, d_v in getattr(pi_data, k).items():
                     flat_dict[f"{k}_{d_k}"] = d_v
+            else:
+                flat_dict[k] = getattr(pi_data, k)
         return flat_dict
 
     def write_pi_data(self, sensor_data: PiDataFormat) -> None:
