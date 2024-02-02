@@ -4,7 +4,6 @@ from typing import Union
 from .sensor import PiDataFormat
 import datetime
 import os
-from socket import gethostname
 import platform
 
 COLUMN = namedtuple("Column", ["name", "type", "null", "key", "default", "extra"])
@@ -171,5 +170,5 @@ class SQLLogger(object):
             data_logging_dict["time"] = data_logging_dict["device_sample_time"]
             del data_logging_dict["time"]
         if "device" not in data_logging_dict:
-            data_logging_dict["device"] = gethostname()
+            data_logging_dict["device"] = f"{platform.node()} {platform.system()}"
         self.write_data()
