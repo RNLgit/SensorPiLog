@@ -167,8 +167,8 @@ class SQLLogger(object):
         """
         data_logging_dict = self._flatten_pidata(sensor_data)
         if "time" in data_logging_dict:
-            data_logging_dict["time"] = data_logging_dict["device_sample_time"]
+            data_logging_dict["device_sample_time"] = f"'{data_logging_dict['time']}'"
             del data_logging_dict["time"]
         if "device" not in data_logging_dict:
-            data_logging_dict["device"] = f"{platform.node()} {platform.system()}"
-        self.write_data()
+            data_logging_dict["device"] = f"'{platform.node()} {platform.system()}'"
+        self.write_data(data_logging_dict)
