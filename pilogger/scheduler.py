@@ -41,8 +41,8 @@ if __name__ == "__main__":
         )
     while True:
         with SQLLogger(host=args.database_ip) as db:
-            logger.DEBUG("start reading data and log to database")
+            logger.debug("start reading data and log to database")
             sensor = PiSensor()
             db.write_pi_data(sensor.read_all)
-            logger.DEBUG(f"data logged to database, wait for {args.seconds} seconds before next logging.")
+            logger.debug(f"data logged to database, wait for {args.seconds} seconds before next logging.")
         time.sleep(args.seconds)

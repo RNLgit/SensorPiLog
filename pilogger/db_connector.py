@@ -167,12 +167,12 @@ class SQLLogger(object):
         """
         Write Pi Sense Hat data to database
         """
-        logger.DEBUG("writing rpi sensor data to database")
+        logger.debug("writing rpi sensor data to database")
         data_logging_dict = self._flatten_pidata(sensor_data)
         if "time" in data_logging_dict:
             data_logging_dict["device_sample_time"] = f"'{data_logging_dict['time']}'"
             del data_logging_dict["time"]
         if "device" not in data_logging_dict:
             data_logging_dict["device"] = f"'{platform.node()} {platform.system()}'"
-        logger.DEBUG(f"writing data to database: {data_logging_dict}")
+        logger.debug(f"writing data to database: {data_logging_dict}")
         self.write_data(data_logging_dict)
