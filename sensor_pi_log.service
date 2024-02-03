@@ -1,0 +1,13 @@
+[Unit]
+Description=Scheduler service logging pi sensor data
+After=network.target
+
+[Service]
+Type=simple
+User=rpi2g
+WorkingDirectory=/home/rpi2g/src/SensorPiLog/pilogger
+ExecStart=/usr/bin/python /home/rpi2g/src/SensorPiLog/pilogger/scheduler.py 192.168.0.100
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
