@@ -5,8 +5,10 @@ from .sensor import PiDataFormat
 import datetime
 import os
 import platform
+import logging
 
 COLUMN = namedtuple("Column", ["name", "type", "null", "key", "default", "extra"])
+logger = logging.getLogger("pilogger_scheduler.db_connector")
 
 
 class SQLLogger(object):
@@ -165,10 +167,12 @@ class SQLLogger(object):
         """
         Write Pi Sense Hat data to database
         """
+        logger.DEBUG("writing rpi sensor data to database")
         data_logging_dict = self._flatten_pidata(sensor_data)
         if "time" in data_logging_dict:
             data_logging_dict["device_sample_time"] = f"'{data_logging_dict['time']}'"
             del data_logging_dict["time"]
         if "device" not in data_logging_dict:
             data_logging_dict["device"] = f"'{platform.node()} {platform.system()}'"
+        logger.DEBUG(f"writing data to database: {data_logging_dict}")
         self.write_data(data_logging_dict)
