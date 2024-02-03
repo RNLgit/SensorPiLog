@@ -5,7 +5,11 @@ After=network.target
 [Service]
 Type=simple
 User=rpi2g
-WorkingDirectory=/home/rpi2g/src/SensorPiLog/pilogger
+Environment="PI_SERVER_DATABASE=SensorReadings"
+Environment="PI_SERVER_TABLE_NAME=Samples"
+Environment="PI_SERVER_DB_USER=user_name_here"
+Environment="PI_SERVER_DB_PASSWORD=password_here"
+WorkingDirectory=/home/rpi2g/src
 ExecStart=/usr/bin/python /home/rpi2g/src/SensorPiLog/pilogger/scheduler.py 192.168.0.100
 Restart=on-failure
 
