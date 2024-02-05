@@ -33,6 +33,10 @@ class DbData(object):
 
 
 class SQLLogger(object):
+    """
+    A class to connect to a MySQL database, read and write data to it.
+    """
+
     TABLE_QUERY = "SELECT * FROM {table_name} {where_clause}"
     ORDER_BY = "ORDER BY {column_name} {order_type}"
     LIMIT = "LIMIT {limit}"
