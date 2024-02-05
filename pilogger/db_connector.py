@@ -1,19 +1,40 @@
 import mysql.connector as sql
 from collections import namedtuple
-from typing import Union
+from typing import Union, List
 from .sensor import PiDataFormat
 import datetime
 import os
 import platform
 import logging
+from decimal import Decimal
 
 COLUMN = namedtuple("Column", ["name", "type", "null", "key", "default", "extra"])
 logger = logging.getLogger("pilogger_scheduler.db_connector")
 
 
+class DbData(object):
+    """
+    A class representation of data read from database. db heading as attribute name and value as attribute value.
+    Can access its dict representation using __dict__ attribute
+    """
+
+    def __init__(self, column_names: list, data: list):
+        for i, name in enumerate(column_names):
+            attr_name = name.replace(" ", "_")
+            if isinstance(data[i], Decimal):  # convert decimal from db to float type
+                setattr(self, attr_name, float(data[i]))
+            elif isinstance(data[i], datetime.datetime):  # convert datetime from db to string
+                setattr(self, attr_name, data[i].strftime("%Y-%m-%d %H:%M:%S"))
+            else:
+                setattr(self, attr_name, data[i])
+
+    def __repr__(self):
+        return f"{self.__class__.__name__}({', '.join([f'{k}={v}' for k, v in self.__dict__.items()])})"
+
+
 class SQLLogger(object):
     TABLE_QUERY = "SELECT * FROM {table_name} {where_clause}"
-    ORDER_BY = "ORDER BY {column_name} DESC"
+    ORDER_BY = "ORDER BY {column_name} {order_type}"
     LIMIT = "LIMIT {limit}"
     INSERT = "INSERT INTO {table_name} ({columns}) VALUES ({values})"
     PIDATA_LOG_FIELDS = [
@@ -115,6 +136,7 @@ class SQLLogger(object):
         column_name: str = "sample_time",
         order_by_col="sample_time",
         limit: int = None,
+        is_decreasing: bool = True,
     ) -> list:
         """
         Read all records from a table by date. Date must be in the format of datatime.date or YYYY-MM-DD
@@ -123,15 +145,19 @@ class SQLLogger(object):
         :param column_name: name of the column to read from
         :param order_by_col: column to order by
         :param limit: limit number of records to read
+        :param is_decreasing: order by decreasing or increasing
         """
         if date and isinstance(date, datetime.date):
-            date = date.strftime("%Y-%m-%d")
-            where_date_clause = f"WHERE DATE({column_name}) = '{date}'"
+            where_date_clause = f"WHERE DATE({column_name}) = '{date.strftime('%Y-%m-%d')}'"
+        elif date and isinstance(date, str):
+            where_date_clause = f"WHERE DATE({column_name}) = '{datetime.datetime.strptime(date, '%Y-%m-%d').date()}'"
         base_query = self.TABLE_QUERY.format(
             table_name=self._get_table_name_auto(table_name), where_clause=where_date_clause if date else ""
         ).strip()
         if order_by_col:
-            base_query += " " + self.ORDER_BY.format(column_name=order_by_col)
+            base_query += " " + self.ORDER_BY.format(
+                column_name=order_by_col, order_type="DESC" if is_decreasing else "ASC"
+            )
         if limit:
             base_query += " " + self.LIMIT.format(limit=limit)
         self.cursor.execute(base_query)
@@ -176,3 +202,20 @@ class SQLLogger(object):
             data_logging_dict["device"] = f"'{platform.node()} {platform.system()}'"
         logger.debug(f"writing data to database: {data_logging_dict}")
         self.write_data(data_logging_dict)
+
+    def read_pi_data(
+        self,
+        date: Union[str, datetime.date] = None,
+        table_name: str = None,
+        column_name: str = "sample_time",
+        order_by_col="sample_time",
+        limit: int = None,
+    ) -> List[DbData]:
+        """
+        Read Pi Sense Hat data from database as a list of DbData object
+        """
+        data_list = self.read_data(
+            date=date, table_name=table_name, column_name=column_name, order_by_col=order_by_col, limit=limit
+        )
+        header = [col.name for col in self.list_columns(table_name)]
+        return [DbData(header, i) for i in data_list]
