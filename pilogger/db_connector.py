@@ -96,6 +96,8 @@ class SQLLogger(object):
     def close(self) -> None:
         self.cursor.close()
         self.connection.close()
+        self.cursor = None
+        self.connection = None
 
     def reconnect(self, database: str) -> None:
         if self.connection.is_connected():
