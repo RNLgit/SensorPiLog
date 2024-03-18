@@ -12,6 +12,7 @@ Environment="PI_SERVER_DB_PASSWORD=password_here"
 WorkingDirectory=/home/rpi2g/src
 ExecStart=/usr/bin/python /home/rpi2g/src/SensorPiLog/pilogger/scheduler.py 192.168.0.100
 Restart=on-failure
+RestartSec=10
 
 [Install]
 WantedBy=multi-user.target
